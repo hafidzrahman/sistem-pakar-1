@@ -1,5 +1,6 @@
 'use client';
 import next from 'next';
+import Image from 'next/image';
 import {useState} from 'react'
 
 const basicKnowledges : {
@@ -43,9 +44,9 @@ const questions : {
   'B21' : "Apakah ikan memiliki warna biru?"
 }
 
-const yesAnswers : string[] = [];
-const noAnswers : string[] = [];
-const answered : string[] = [];
+let yesAnswers : string[] = [];
+let noAnswers : string[] = [];
+let answered : string[] = [];
 
 
 export default function Home() {
@@ -53,6 +54,18 @@ export default function Home() {
   const [result, setResult] = useState<any[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [gotcha, setGotcha] = useState<string | null>(null);
+  const [start, setStart] = useState<boolean>(false);
+
+  function handleRestart() {
+    yesAnswers = [];
+    noAnswers = [];
+    answered = [];
+    setQuestionNumber(1);
+    setResult([])
+    setSummary(null);
+    setGotcha(null);
+    setStart(false);
+  }
 
   let question = "";
 
@@ -84,7 +97,7 @@ export default function Home() {
       }}
     }
 
-    console.log(scores);
+
       if (!ok) {
       let score = 0;
 
@@ -127,7 +140,12 @@ export default function Home() {
         noAnswers.push(`B${questionNumber}`)
       }
       nextQuestion = yesAnswers.length === 0 ? nextQuestion : parseInt(filter(Object.values(basicKnowledges))!)
-      // console.log(Object.values(basicKnowledges).filter(array1D => array1D.filter(data => yesAnswers.)).filter(array1D => array1D.filter(data => !noAnswers.includes(data))))
+      console.log(nextQuestion)
+      if (nextQuestion === undefined || nextQuestion === null || Number.isNaN(nextQuestion)) {
+        answered = new Array(Object.keys(questions).length).fill(0);
+        console.log(answered.length === maxQuestionNumber)
+        setQuestionNumber(maxQuestionNumber)
+      }
     } else if (questionNumber === maxQuestionNumber) {
       answered.push(`B${questionNumber}`);
       if(answer === 'yes') yesAnswers.push(`B${questionNumber}`);
@@ -136,7 +154,6 @@ export default function Home() {
     }
 
     if (questionNumber <= maxQuestionNumber) {
-      console.log(nextQuestion)
       setQuestionNumber(nextQuestion!);
     }
   }
@@ -164,15 +181,27 @@ export default function Home() {
       }
   }
 
-
   return (
     <div className="w-full h-[100vh] flex justify-center items-center">
-        <div className="w-[60%] h-96 rounded-lg shadow-2xl py-10 px-6 flex flex-col justify-between">
-          {gotcha !== null && <p>{`Dari ciri-ciri yang diberikan, jenis ikan yang dimaksud adalah : ${gotcha}`}</p>}
+        <div className="w-[40%] h-[25rem] rounded-lg shadow-2xl pt-5 pb-10 px-6 flex flex-col justify-between border-[1px] ">
+          <h1 className='font-bold text-lg'>Sistem Pakar Identifikasi Jenis Ikan</h1>
+          {!start && <div className='w-full h-full flex flex-col justify-between'>
+            <div className='mt-5'>
+            <p>Selamat datang di aplikasi sistem pakar identifikasi jenis ikan</p>
+            <p>Silahkan klik "Mulai" untuk mengidentifikasi jenis ikan</p>
+            </div>
+            <button className='shadow-lg bg-black text-white font-bold text-lg py-1 px-10 rounded-lg' onClick={() => setStart(true)}>Mulai</button>
+            </div>}
+          {start && <div className='w-full h-full flex flex-col justify-between'>
+          {gotcha === null && result.length === 0 && Object.keys(questions).length === answered.length && <p>Tidak ada data yang sesuai</p>}
+          {gotcha === null && result.length === 0 && Object.keys(questions).length === answered.length && <button onClick={handleRestart} className='shadow-lg bg-black text-white font-bold text-lg py-1 px-10 rounded-lg'>Mulai Lagi</button>}
+          {gotcha !== null && <p className='mt-3'>{`Dari ciri-ciri yang diberikan, jenis ikan yang dimaksud adalah : `} <span className='font-bold'>{gotcha}</span></p>}
+          {gotcha !== null && <Image className='m-auto' src={`/${gotcha}.png`} alt={gotcha} width={230} height={230}/>}
+          {gotcha !== null && <button onClick={handleRestart} className='shadow-lg bg-black text-white font-bold text-lg py-1 px-10 rounded-lg'>Mulai Lagi</button>}
           {summary === null && gotcha === null && <p>{question}</p>}
-          {(result.length === 0 && summary === null && gotcha === null) && <div className='flex justify-between items-center'>
-          <button onClick={() => onClick('yes')} >Ya</button>
-          <button onClick={() => onClick('no')} >Tidak</button>
+          {(result.length === 0 && Object.keys(questions).length !== answered.length && summary === null && gotcha === null) && <div className='flex justify-between items-center'>
+          <button className='shadow-lg bg-black text-white font-bold text-lg py-1 px-10 rounded-lg' onClick={() => onClick('yes')} >Ya</button>
+          <button className='shadow-lg bg-black text-white font-bold text-lg py-1 px-10 rounded-lg' onClick={() => onClick('no')} >Tidak</button>
           </div>}
           {gotcha === null && result.length === 0 && summary !== null && <p>{summary}</p>}
           {gotcha === null && result.length !== 0 && summary !== null && 
@@ -181,7 +210,8 @@ export default function Home() {
             {result.map((data,i) => <p key={i}>{data}</p>)}
             </div>
             }
-        </div>
+        </div>}
+    </div>
     </div>
   );
 }
